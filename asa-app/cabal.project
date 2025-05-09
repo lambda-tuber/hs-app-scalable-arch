@@ -1,0 +1,5 @@
+packages:
+  ./
+  ../asa-domain-model
+
+

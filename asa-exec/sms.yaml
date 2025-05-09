@@ -1,0 +1,2 @@
+logDir : "./logs"
+logLevel : "Debug"
