@@ -3,6 +3,6 @@
 
 cabal install --overwrite-policy=always
 
-/home/zaku/.cabal/bin/asa-exec -y ./asa.yaml
+/home/zaku/.cabal/bin/asa-exec -y ./asa-exec.yaml
 
 
