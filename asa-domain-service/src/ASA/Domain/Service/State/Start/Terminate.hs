@@ -1,12 +1,13 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module ASA.Domain.Service.State.Starting.Disconnect where
+module ASA.Domain.Service.State.Start.Terminate where
 
 import ASA.Domain.Service.Type
 
+
 -- |
 --
-instance IStateActivity StartingStateData DisconnectRequestData
+instance IStateActivity StartStateData TerminateEventData
   -- @see default implementation in Type module.
 

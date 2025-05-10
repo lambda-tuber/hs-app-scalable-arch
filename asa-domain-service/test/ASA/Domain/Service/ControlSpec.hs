@@ -25,7 +25,7 @@ makeLenses ''SpecContext
 defaultSpecContext :: IO SpecContext
 defaultSpecContext = do
   domDat <- DM.defaultDomainData
-  let appDat = SUT.AppStateW SUT.StartingState
+  let appDat = SUT.AppStateW SUT.StartState
   return SpecContext {
            _domainDataSpecContext = domDat
          , _appDataSpecContext    = appDat
@@ -63,7 +63,7 @@ setUp ctx = do
 
   domDat <- DM.defaultDomainData
   return ctx {  _domainDataSpecContext = domDat
-              , _appDataSpecContext    = SUT.AppStateW SUT.StartingState
+              , _appDataSpecContext    = SUT.AppStateW SUT.StartState
               }
 
 -- |

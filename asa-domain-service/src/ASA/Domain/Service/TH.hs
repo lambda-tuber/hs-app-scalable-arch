@@ -31,22 +31,22 @@ import ASA.Domain.Service.Utility
 
 :{
  runQ [d|
-   instance IAppState StartingStateData where
-     actionS s (RequestW r@EntryRequest{})      = action s r
+   instance IAppState StartStateData where
+     actionS s (EventW r@EntryEvent{})      = action s r
    |]
 :}
 
-[InstanceD Nothing [] (AppT (ConT Type.IAppState) (ConT Type.StartingState))
+[InstanceD Nothing [] (AppT (ConT Type.IAppState) (ConT Type.StartState))
   [FunD Type.doActivity
-    [Clause [VarP s_8,ConP Type.RequestW [AsP r_9 (RecP Type.InitRequest [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_8)) (VarE r_9))) [],
-     Clause [VarP s_10,ConP Type.RequestW [AsP r_11 (RecP Type.TerminateRequest [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_10)) (VarE r_11))) []
+    [Clause [VarP s_8,ConP Type.EventW [AsP r_9 (RecP Type.InitEvent [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_8)) (VarE r_9))) [],
+     Clause [VarP s_10,ConP Type.EventW [AsP r_11 (RecP Type.TerminateEvent [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_10)) (VarE r_11))) []
     ]
   ]
 ]
 
-[InstanceD Nothing [] (AppT (ConT Type.IAppState) (ConT Type.StartingStateData))
+[InstanceD Nothing [] (AppT (ConT Type.IAppState) (ConT Type.StartStateData))
   [FunD Type.actionS 
-    [Clause [VarP s_0,ConP Type.RequestW [] [AsP r_1 (RecP Type.EntryRequest [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_0)) (VarE r_1))) []
+    [Clause [VarP s_0,ConP Type.EventW [] [AsP r_1 (RecP Type.EntryEvent [])]] (NormalB (AppE (AppE (VarE Type.action) (VarE s_0)) (VarE r_1))) []
     ]
   ]
 ]
@@ -54,18 +54,18 @@ import ASA.Domain.Service.Utility
 
 :{
  runQ [d|
-   data Request r where
-     InitRequest :: Request InitRequest
+   data Event r where
+     InitEvent :: Event InitEvent
    |]
 :}
 
-[DataD [] Request_12 [PlainTV r_14] Nothing [GadtC [InitRequest_13] [] (AppT (ConT Request_12) (ConT Type.InitRequest))] []]
+[DataD [] Event_12 [PlainTV r_14] Nothing [GadtC [InitEvent_13] [] (AppT (ConT Event_12) (ConT Type.InitEvent))] []]
 
 -}
 
 instanceTH_IAppState :: Name -> Q [Dec]
 instanceTH_IAppState stName = do
-  ns <- getGadtsContNames ''Request
+  ns <- getGadtsContNames ''Event
   clauseList <- mapM go ns
   return $ [InstanceD Nothing [] (AppT (ConT ''IAppState) (ConT stName)) [FunD 'actionS clauseList]]
 
@@ -75,7 +75,7 @@ instanceTH_IAppState stName = do
     go n = do
       s <- newName "s"
       r <- newName "r"
-      return $ Clause [VarP s, ConP 'RequestW [] [AsP r (RecP n [])]] (NormalB (AppE (AppE (VarE 'action) (VarE s)) (VarE r))) []
+      return $ Clause [VarP s, ConP 'EventW [] [AsP r (RecP n [])]] (NormalB (AppE (AppE (VarE 'action) (VarE s)) (VarE r))) []
 
     -- |
     --
@@ -99,20 +99,20 @@ instanceTH_IAppState stName = do
 :{
  runQ [d|
     transit :: StateTransition -> AppContext ()
-    transit StartingToRunning = get >>= \case
-      AppStateW StartingState -> changeTo $ AppStateW RunningState
-      AppStateW x -> fail $ "invalid state transition. trans:" ++ show StartingToRunning ++ ", curSt:" ++ show x
-    transit RunningToStopping = get >>= \case
-      AppStateW RunningState -> changeTo $ AppStateW StoppingState
-      AppStateW x -> fail $ "invalid state transition. trans:" ++ show StartingToRunning ++ ", curSt:" ++ show x
+    transit StartToRun = get >>= \case
+      AppStateW StartState -> changeTo $ AppStateW RunState
+      AppStateW x -> fail $ "invalid state transition. trans:" ++ show StartToRun ++ ", curSt:" ++ show x
+    transit RunToStop = get >>= \case
+      AppStateW RunState -> changeTo $ AppStateW StopState
+      AppStateW x -> fail $ "invalid state transition. trans:" ++ show StartToRun ++ ", curSt:" ++ show x
    |]
 :}
 
 [SigD transit_0 (AppT (AppT ArrowT (ConT Type.StateTransition)) (AppT (ConT Type.AppStateContext) (TupleT 0))),
   FunD transit_0 [
-    Clause [ConP Type.StartingToRunning []]
+    Clause [ConP Type.StartToRun []]
      (NormalB (InfixE (Just (UnboundVarE get)) (VarE GHC.Base.>>=) (Just (LamCaseE [
-        Match (ConP Type.AppStateW [ConP Type.StartingState []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.RunningState))))) [],
+        Match (ConP Type.AppStateW [ConP Type.StartState []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.RunState))))) [],
         Match (ConP Type.AppStateW [VarP x_5])
           (NormalB (InfixE
             (Just (VarE GHC.Base.fail))
@@ -121,7 +121,7 @@ instanceTH_IAppState stName = do
               (Just (LitE (StringL "invalid state transition. trans:")))
                 (VarE GHC.Base.++)
                 (Just (InfixE
-                  (Just (AppE (VarE GHC.Show.show) (ConE Type.StartingToRunning)))
+                  (Just (AppE (VarE GHC.Show.show) (ConE Type.StartToRun)))
                   (VarE GHC.Base.++)
                   (Just (InfixE
                     (Just (LitE (StringL ", curSt:")))
@@ -133,17 +133,17 @@ instanceTH_IAppState stName = do
           )) []
       ])))) [],
     Clause [
-      ConP Type.RunningToStopping []] (NormalB (InfixE (Just (UnboundVarE get)) (VarE GHC.Base.>>=) (Just (LamCaseE [
-        Match (ConP Type.AppStateW [ConP Type.RunningState []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.StoppingState))))) [],
-        Match (VarP x_2) (NormalB (InfixE (Just (VarE GHC.Base.fail)) (VarE GHC.Base.$) (Just (InfixE (Just (LitE (StringL "invalid state transition. trans:"))) (VarE GHC.Base.++) (Just (InfixE (Just (AppE (VarE GHC.Show.show) (ConE Type.StartingToRunning))) (VarE GHC.Base.++) (Just (InfixE (Just (LitE (StringL ", curSt:"))) (VarE GHC.Base.++) (Just (AppE (VarE GHC.Show.show) (VarE x_2))))))))))) []])))) []]]
+      ConP Type.RunToStop []] (NormalB (InfixE (Just (UnboundVarE get)) (VarE GHC.Base.>>=) (Just (LamCaseE [
+        Match (ConP Type.AppStateW [ConP Type.RunState []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.StopState))))) [],
+        Match (VarP x_2) (NormalB (InfixE (Just (VarE GHC.Base.fail)) (VarE GHC.Base.$) (Just (InfixE (Just (LitE (StringL "invalid state transition. trans:"))) (VarE GHC.Base.++) (Just (InfixE (Just (AppE (VarE GHC.Show.show) (ConE Type.StartToRun))) (VarE GHC.Base.++) (Just (InfixE (Just (LitE (StringL ", curSt:"))) (VarE GHC.Base.++) (Just (AppE (VarE GHC.Show.show) (VarE x_2))))))))))) []])))) []]]
     ]
 ]
 
 [SigD transit_2 (AppT (AppT ArrowT (ConT Type.StateTransition)) (AppT (ConT Type.AppContext) (TupleT 0))),
   FunD transit_2 [
-    Clause [ConP Type.StartingToRunning [] []]
+    Clause [ConP Type.StartToRun [] []]
       (NormalB (InfixE (Just (VarE Control.Monad.Trans.State.Lazy.get)) (VarE GHC.Internal.Base.>>=) (Just (LamCaseE [
-        Match (ConP Type.AppStateW [] [ConP Type.StartingState [] []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Internal.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.RunningState))))) [],
+        Match (ConP Type.AppStateW [] [ConP Type.StartState [] []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Internal.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.RunState))))) [],
         Match (ConP Type.AppStateW [] [VarP x_3])
           (NormalB (InfixE 
             (Just (VarE GHC.Internal.Control.Monad.Fail.fail))
@@ -152,7 +152,7 @@ instanceTH_IAppState stName = do
                 (Just (LitE (StringL "invalid state transition. trans:")))
                   (VarE GHC.Internal.Base.++)
                   (Just (InfixE 
-                    (Just (AppE (VarE GHC.Internal.Show.show) (ConE Type.StartingToRunning))) 
+                    (Just (AppE (VarE GHC.Internal.Show.show) (ConE Type.StartToRun))) 
                     (VarE GHC.Internal.Base.++)
                     (Just (InfixE (Just (LitE (StringL ", curSt:")))
                       (VarE GHC.Internal.Base.++)
@@ -162,9 +162,9 @@ instanceTH_IAppState stName = do
                 ))
               )) []
         ])))) [],
-    Clause [ConP Type.RunningToStopping [] []] (NormalB (InfixE (Just (VarE Control.Monad.Trans.State.Lazy.get)) (VarE GHC.Internal.Base.>>=) (Just (LamCaseE [
-      Match (ConP Type.AppStateW [] [ConP Type.RunningState [] []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Internal.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.StoppingState))))) [],
-      Match (ConP Type.AppStateW [] [VarP x_4]) (NormalB (InfixE (Just (VarE GHC.Internal.Control.Monad.Fail.fail)) (VarE GHC.Internal.Base.$) (Just (InfixE (Just (LitE (StringL "invalid state transition. trans:"))) (VarE GHC.Internal.Base.++) (Just (InfixE (Just (AppE (VarE GHC.Internal.Show.show) (ConE Type.StartingToRunning))) (VarE GHC.Internal.Base.++) (Just (InfixE (Just (LitE (StringL ", curSt:"))) (VarE GHC.Internal.Base.++) (Just (AppE (VarE GHC.Internal.Show.show) (VarE x_4))))))))))) []])))) []
+    Clause [ConP Type.RunToStop [] []] (NormalB (InfixE (Just (VarE Control.Monad.Trans.State.Lazy.get)) (VarE GHC.Internal.Base.>>=) (Just (LamCaseE [
+      Match (ConP Type.AppStateW [] [ConP Type.RunState [] []]) (NormalB (InfixE (Just (UnboundVarE changeTo)) (VarE GHC.Internal.Base.$) (Just (AppE (ConE Type.AppStateW) (ConE Type.StopState))))) [],
+      Match (ConP Type.AppStateW [] [VarP x_4]) (NormalB (InfixE (Just (VarE GHC.Internal.Control.Monad.Fail.fail)) (VarE GHC.Internal.Base.$) (Just (InfixE (Just (LitE (StringL "invalid state transition. trans:"))) (VarE GHC.Internal.Base.++) (Just (InfixE (Just (AppE (VarE GHC.Internal.Show.show) (ConE Type.StartToRun))) (VarE GHC.Internal.Base.++) (Just (InfixE (Just (LitE (StringL ", curSt:"))) (VarE GHC.Internal.Base.++) (Just (AppE (VarE GHC.Internal.Show.show) (VarE x_4))))))))))) []])))) []
     ]
 ]
 

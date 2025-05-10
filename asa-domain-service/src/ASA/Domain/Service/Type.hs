@@ -16,38 +16,38 @@ import qualified ASA.Domain.Model.Type as DM
 -- |
 --
 data StateTransition =
-    StartingToRunning
-  | RunningToStopping
+    StartToRun
+  | RunToStop
   deriving (Show, Eq)
 
 -- |
 --
-data EntryRequestData      = EntryRequestData deriving (Show)
-data ExitRequestData       = ExitRequestData  deriving (Show)
-data TransitRequestData    = TransitRequestData StateTransition deriving (Show)
+data EntryEventData      = EntryEventData deriving (Show)
+data ExitEventData       = ExitEventData  deriving (Show)
+data TransitEventData    = TransitEventData StateTransition deriving (Show)
 -- doActibity
-data InitRequestData       = InitRequestData String deriving (Show)
-data LaunchRequestData     = LaunchRequestData Int deriving (Show)
-data DisconnectRequestData = DisconnectRequestData Int deriving (Show)
-data TerminateRequestData  = TerminateRequestData Int  deriving (Show)
+data InitEventData       = InitEventData String deriving (Show)
+data LaunchEventData     = LaunchEventData Int deriving (Show)
+data DisconnectEventData = DisconnectEventData Int deriving (Show)
+data TerminateEventData  = TerminateEventData Int  deriving (Show)
 
 -- |
 --
-data Request r where
-  EntryRequest      :: Request EntryRequestData
-  ExitRequest       :: Request ExitRequestData
-  TransitRequest    :: TransitRequestData -> Request TransitRequestData
+data Event r where
+  EntryEvent      :: Event EntryEventData
+  ExitEvent       :: Event ExitEventData
+  TransitEvent    :: TransitEventData -> Event TransitEventData
   -- doActibity
-  InitRequest       :: InitRequestData       -> Request InitRequestData
-  LaunchRequest     :: LaunchRequestData     -> Request LaunchRequestData
-  DisconnectRequest :: DisconnectRequestData -> Request DisconnectRequestData
-  TerminateRequest  :: TerminateRequestData  -> Request TerminateRequestData
+  InitEvent       :: InitEventData       -> Event InitEventData
+  LaunchEvent     :: LaunchEventData     -> Event LaunchEventData
+  DisconnectEvent :: DisconnectEventData -> Event DisconnectEventData
+  TerminateEvent  :: TerminateEventData  -> Event TerminateEventData
 
-deriving instance Show r => Show (Request r)
+deriving instance Show r => Show (Event r)
 
 -- |
 --
-data RequestW = forall r. RequestW (Request r)
+data EventW = forall r. EventW (Event r)
 
 
 
@@ -64,13 +64,13 @@ type AppContext = AppStateContext
 
 -- |
 --
-data StartingStateData = StartingStateData deriving (Show)
-data RunningStateData  = RunningStateData  deriving (Show)
-data StoppingStateData = StoppingStateData deriving (Show)
+data StartStateData = StartStateData deriving (Show)
+data RunStateData  = RunStateData  deriving (Show)
+data StopStateData = StopStateData deriving (Show)
 data AppState s where
-  StartingState :: AppState StartingStateData
-  RunningState  :: AppState RunningStateData
-  StoppingState :: AppState StoppingStateData
+  StartState :: AppState StartStateData
+  RunState  :: AppState RunStateData
+  StopState :: AppState StopStateData
 
 deriving instance Show s => Show (AppState s)
 
@@ -82,8 +82,8 @@ data AppStateW = forall s. (IAppState s, Show s) => AppStateW (AppState s)
 -- |
 --
 class (Show s, Show r) => IStateActivity s r where
-  action :: (AppState s) -> (Request r) -> AppStateContext (Maybe StateTransition)
-  action s (TransitRequest (TransitRequestData t)) = do
+  action :: (AppState s) -> (Event r) -> AppStateContext (Maybe StateTransition)
+  action s (TransitEvent (TransitEventData t)) = do
     liftIO $ putStrLn $ show s ++ " " ++ show t ++ " will transit."
     return (Just t)
   action s r = do
@@ -93,12 +93,12 @@ class (Show s, Show r) => IStateActivity s r where
 -- |
 --
 class IAppState s where
-  actionS  :: AppState s -> RequestW -> AppStateContext (Maybe StateTransition)
+  actionS  :: AppState s -> EventW -> AppStateContext (Maybe StateTransition)
 
 -- |
 --
 class IAppStateW s where
-  actionSW  :: s -> RequestW -> AppStateContext (Maybe StateTransition)
+  actionSW  :: s -> EventW -> AppStateContext (Maybe StateTransition)
 
 instance IAppStateW AppStateW where
   actionSW (AppStateW a) r = actionS a r

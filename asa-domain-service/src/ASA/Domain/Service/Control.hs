@@ -15,9 +15,9 @@ import qualified ASA.Domain.Model.Utility as DM
 import ASA.Domain.Service.Constant
 import ASA.Domain.Service.Type
 import ASA.Domain.Service.Core
-import ASA.Domain.Service.State.Starting()
-import ASA.Domain.Service.State.Running()
-import ASA.Domain.Service.State.Stopping()
+import ASA.Domain.Service.State.Start()
+import ASA.Domain.Service.State.Run()
+import ASA.Domain.Service.State.Stop()
 
 import ASA.Domain.Service.Utility
 
@@ -28,7 +28,7 @@ run :: DM.DomainContext ()
 run dat = do
   hPutStrLn stderr "[INFO] ASA.Domain.Service.Control.run called."
 
-  let appDat = AppStateW StartingState
+  let appDat = AppStateW StartState
   runWithAppData appDat dat
 
 -- |

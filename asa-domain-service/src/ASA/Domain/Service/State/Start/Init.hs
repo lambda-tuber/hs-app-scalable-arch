@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ASA.Domain.Service.State.Starting.Init where
+module ASA.Domain.Service.State.Start.Init where
 
 import System.IO
 import Control.Monad.IO.Class
@@ -23,9 +23,9 @@ import ASA.Domain.Service.Type
 
 -- |
 --
-instance IStateActivity StartingStateData InitRequestData where
-  action s (InitRequest r@(InitRequestData str)) = do
-    $logDebugS DM._LOGTAG "Starting init called."
+instance IStateActivity StartStateData InitEventData where
+  action s (InitEvent r@(InitEventData str)) = do
+    $logDebugS DM._LOGTAG "Start init called."
     $logDebugS DM._LOGTAG (T.pack (show s))
     $logDebugS DM._LOGTAG (T.pack (show r))
 
@@ -39,7 +39,7 @@ instance IStateActivity StartingStateData InitRequestData where
         queue <- view DM.responseQueueDomainData <$> lift ask
         liftIO $ STM.atomically $ STM.writeTQueue queue len
 
-        return $ Just StartingToRunning
+        return $ Just StartToRun
       
       runCommand x = do
         resQ  <- view DM.responseQueueDomainData <$> lift ask
@@ -57,7 +57,7 @@ instance IStateActivity StartingStateData InitRequestData where
       --
       initCallback :: STM.TQueue Int -> Int -> IO ()
       initCallback queue x = do
-        hPutStrLn stderr $ "[INFO] ASA.Domain.Service.State.Starting.Init.action.initCallback called."
+        hPutStrLn stderr $ "[INFO] ASA.Domain.Service.State.Start.Init.action.initCallback called."
         hPutStrLn stderr $ "[INFO] result is " ++  show x ++ "."
         STM.atomically $ STM.writeTQueue queue x
 

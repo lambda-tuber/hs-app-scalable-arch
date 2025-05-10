@@ -19,9 +19,9 @@ import qualified ASA.Domain.Model.Constant as DM
 
 import ASA.Domain.Service.Type
 import ASA.Domain.Service.TH
-import ASA.Domain.Service.State.Starting()
-import ASA.Domain.Service.State.Running()
-import ASA.Domain.Service.State.Stopping()
+import ASA.Domain.Service.State.Start()
+import ASA.Domain.Service.State.Run()
+import ASA.Domain.Service.State.Stop()
 
 -- |
 --
@@ -52,28 +52,28 @@ src = lift go >>= yield >> src
 ---------------------------------------------------------------------------------
 -- |
 --
-work :: ConduitT String RequestW AppContext ()
+work :: ConduitT String EventW AppContext ()
 work = await >>= \case
   Just reqBS -> lift (go reqBS) >>= yield >> work
   Nothing -> do
     $logWarnS DM._LOGTAG "work: await returns nothing. skip."
     work
   where
-    go :: String -> AppContext RequestW
-    go str = return $ RequestW (InitRequest (InitRequestData str))
+    go :: String -> AppContext EventW
+    go str = return $ EventW (InitEvent (InitEventData str))
 
 ---------------------------------------------------------------------------------
 -- |
 --
-sink :: ConduitT RequestW Void AppContext ()
+sink :: ConduitT EventW Void AppContext ()
 sink = await >>= \case
-  Just req -> lift (go req) >> sink
+  Just ev -> lift (go ev) >> sink
   Nothing -> do
     $logWarnS DM._LOGTAG "sink: await returns nothing. skip."
     sink
 
   where
-    go :: RequestW -> AppContext ()
-    go req = get >>= flip actionSW req >>= \case
+    go :: EventW -> AppContext ()
+    go ev = get >>= flip actionSW ev >>= \case
       Nothing -> return ()
       Just st -> transit st

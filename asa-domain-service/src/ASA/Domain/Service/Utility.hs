@@ -18,9 +18,9 @@ import ASA.Domain.Service.Type
 changeTo :: AppStateW -> AppStateContext ()
 changeTo nextSt = do
   curSt <- get
-  _ <- actionSW curSt (RequestW ExitRequest)
+  _ <- actionSW curSt (EventW ExitEvent)
 
-  let req = RequestW EntryRequest
+  let req = EventW EntryEvent
   _ <- actionSW nextSt req
 
   modify (\_ -> nextSt)
