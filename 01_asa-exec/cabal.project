@@ -1,0 +1,10 @@
+packages:
+  ./
+  ../11_asa-ui-request
+  ../12_asa-ui-response
+  ../21_asa-infra
+  ../31_asa-app
+  ../41_asa-domain-service
+  ../51_asa-domain-model
+ 
+
