@@ -26,3 +26,8 @@ defaultAppData = do
 -- |
 --
 type AppContext = ReaderT AppData (ReaderT DM.DomainData (ExceptT DM.ErrorData (LoggingT IO)))
+
+-- |
+--
+type IOTask = IO
+

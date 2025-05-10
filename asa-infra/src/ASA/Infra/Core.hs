@@ -46,7 +46,7 @@ src = lift go >>= yield >> src
 ---------------------------------------------------------------------------------
 -- |
 --
-work :: ConduitT DM.Command (IO ()) AppContext ()
+work :: ConduitT DM.Command (IOTask ()) AppContext ()
 work = await >>= \case
   Just cmd -> lift (go cmd) >>= yield >> work
   Nothing -> do
@@ -54,7 +54,7 @@ work = await >>= \case
     work
 
   where
-    go :: DM.Command -> AppContext (IO ())
+    go :: DM.Command -> AppContext (IOTask ())
     go (DM.InitializeCommand dat) = return $ task dat
     go _ = do
       $logDebugS DM._LOGTAG "work.go: not yet implemented."
